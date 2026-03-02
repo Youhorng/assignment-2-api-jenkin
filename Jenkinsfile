@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        VENV_DIR = '/home/ubuntu/venv'
-        REQ_HASH_FILE = '/home/ubuntu/.req_hash'
+        VENV_DIR = '/var/lib/jenkins/venv'
+        REQ_HASH_FILE = '/var/lib/jenkins/.req_hash'
     }
 
     stages {
@@ -56,7 +56,7 @@ pipeline {
             steps {
                 sh '''
                     nohup $VENV_DIR/bin/uvicorn main:app --host 0.0.0.0 --port 8000 \
-                        > /home/ubuntu/app.log 2>&1 &
+                        > /var/lib/jenkins/app.log 2>&1 &
                     echo "FastAPI deployed!"
                 '''
             }
