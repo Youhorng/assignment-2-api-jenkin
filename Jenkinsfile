@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_DIR = '/var/lib/jenkins/venv'
+        REQ_HASH_FILE = '/var/lib/jenkins/.req_hash'
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -12,17 +17,31 @@ pipeline {
         stage('Setup Virtualenv & Install Dependencies') {
             steps {
                 sh '''
-                    # Install python3-venv if not present
-                    sudo apt-get install -y python3-venv python3-pip
-
                     # Create venv if it doesn't exist
-                    if [ ! -d /var/lib/jenkins/venv ]; then
-                        python3 -m venv /var/lib/jenkins/venv
+                    # NOTE: python3.12-venv must be installed on the server manually:
+                    #   sudo apt-get install -y python3.12-venv
+                    if [ ! -d "$VENV_DIR" ]; then
+                        python3 -m venv $VENV_DIR
+                        echo "Virtual environment created."
                     fi
 
-                    # Always install/update dependencies
-                    /var/lib/jenkins/venv/bin/pip install --upgrade pip
-                    /var/lib/jenkins/venv/bin/pip install -r requirements.txt
+                    # Compute current requirements.txt hash
+                    CURRENT_HASH=$(md5sum requirements.txt | awk '{ print $1 }')
+
+                    # Read previously stored hash (if any)
+                    PREV_HASH=""
+                    if [ -f "$REQ_HASH_FILE" ]; then
+                        PREV_HASH=$(cat $REQ_HASH_FILE)
+                    fi
+
+                    # Only install if requirements.txt changed
+                    if [ "$CURRENT_HASH" != "$PREV_HASH" ]; then
+                        echo "requirements.txt changed — installing dependencies..."
+                        $VENV_DIR/bin/pip install -r requirements.txt
+                        echo "$CURRENT_HASH" > $REQ_HASH_FILE
+                    else
+                        echo "requirements.txt unchanged — skipping install."
+                    fi
                 '''
             }
         }
@@ -38,9 +57,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                    cd /var/lib/jenkins/workspace/api-jenkin
-                    nohup /var/lib/jenkins/venv/bin/uvicorn main:app \
-                        --host 0.0.0.0 --port 8000 \
+                    nohup $VENV_DIR/bin/uvicorn main:app --host 0.0.0.0 --port 8000 \
                         > /var/lib/jenkins/app.log 2>&1 &
                     echo "FastAPI deployed!"
                 '''
