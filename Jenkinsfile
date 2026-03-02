@@ -39,7 +39,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                    cd /var/lib/jenkins/workspace/jenkin-api
+                    cd $WORKSPACE
                     nohup /var/lib/jenkins/venv/bin/uvicorn main:app \
                         --host 0.0.0.0 \
                         --port 8000 \
