@@ -40,6 +40,7 @@ pipeline {
             steps {
                 sh '''
                     cd $WORKSPACE
+                    JENKINS_NODE_COOKIE=dontKillMe \
                     nohup /var/lib/jenkins/venv/bin/uvicorn main:app \
                         --host 0.0.0.0 \
                         --port 8000 \
