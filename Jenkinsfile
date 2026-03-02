@@ -12,13 +12,8 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                    # Create virtual environment if not exists
                     python3 -m venv /var/lib/jenkins/venv
-
-                    # Upgrade pip
                     /var/lib/jenkins/venv/bin/pip install --upgrade pip
-
-                    # Install dependencies
                     /var/lib/jenkins/venv/bin/pip install -r requirements.txt
                 '''
             }
@@ -41,7 +36,7 @@ pipeline {
                         --host 0.0.0.0 \
                         --port 8000 \
                         > /var/lib/jenkins/app.log 2>&1 &
-                    disown
+                    echo $! > /var/lib/jenkins/uvicorn.pid
                     sleep 3
                     echo "FastAPI is deployed!"
                 '''
