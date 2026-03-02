@@ -41,6 +41,7 @@ pipeline {
                         --host 0.0.0.0 \
                         --port 8000 \
                         > /var/lib/jenkins/app.log 2>&1 &
+                    disown
                     sleep 3
                     echo "FastAPI is deployed!"
                 '''
